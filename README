@@ -1,0 +1,11 @@
+ICD10 - ICD10 Lookup REST API
+=================================
+
+This project is an open source project from WinguMD, Inc. and provides ICD10 
+dictionary lookup for our Apps. 
+
+It is designed to be used for hierarchical and incremental lookup of appropriate
+codes on mobile devices without requiring much, if any, typing.
+
+It uses JAVA 8 and TypeSafe Activator framework.
+
