@@ -1,7 +1,15 @@
-@(message: String)
+@(message: String)(myForm: Form[models.SearchCriteria])(myCodes: Map[String, String])
 
 @main("Welcome to Play") {
+    <div class="well">
+        <H1>WinguMD ICD-10 Lookup</H1>
+        <h2>@message</h2>
 
-    <H2>@message</H2>
+        @helper.form(action = routes.Application.search()) {
+            @helper.inputText(myForm("filter"))
+        }
 
+        #{table myCodes /}
+
+    </div>
 }
