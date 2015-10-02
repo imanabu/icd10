@@ -1,19 +1,23 @@
 @(message: String)(myForm: Form[models.SearchCriteria])(myCodes: IcdResultSet)
 
-@main("Welcome to Play") {
+@main("WinguMD.com ICD-10 Fast Search") {
     <div class="well">
         <H1>WinguMD ICD-10 Lookup</H1>
-        <h2>@message</h2>
-
+        <h3>@message</h3>
         @helper.form(action = routes.Application.search()) {
-            @helper.inputText(myForm("filter"), '_name -> "txtFilter")
+            @helper.inputText(myForm("filter"), '_label -> "Add a few keywords describing the condition, and press Enter.", 'size -> 75)
         }
 
+
+        <h3>Or, add more keywords from these buttons.</h3>
+
         <div>
+            <a class="btn btn-warning" type="button" href="/">Start Over</a>
             @for(oneTag <- myCodes.tags.toSeq) {
                 <button type="button" class="btn btn-info tags" data-tag="@oneTag">@oneTag</button>
             }
         </div>
+
 
         <table class="table table-striped">
             <thead>
@@ -25,7 +29,7 @@
             <tbody>
                 @myCodes.codeValues.map { oneCodeValue =>
                     <tr>
-                        <td>@oneCodeValue.icd10Code</td>
+                        <td><a type="button" class="btn btn-success" href="@oneCodeValue.url" target="_blank">@oneCodeValue.icd10Code</a></td>
                         <td>@oneCodeValue.desc</td>
                     </tr>
                 }

@@ -6,4 +6,5 @@ package models;
 public class CodeValue {
     public String icd10Code;
     public String desc;
+    public String url;
 }

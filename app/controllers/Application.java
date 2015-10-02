@@ -2,32 +2,22 @@ package controllers;
 
 
 import models.IcdResultSet;
-import play.*;
+import play.Logger;
 import play.data.Form;
-import play.mvc.*;
-
+import play.mvc.Controller;
+import play.mvc.Result;
 import services.SearchService;
-import views.html.*;
-
-
-import java.io.File;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import models.CodeValue;
+import views.html.index;
 
 public class Application extends Controller {
 
     private SearchService searchService;
 
 
-    public Application()
-    {
+    public Application() {
         try {
             searchService = new SearchService();
-        }
-        catch(Exception ex) {
+        } catch (Exception ex) {
             Logger.error("Construction failed due to " + ex.toString());
         }
     }
@@ -38,23 +28,25 @@ public class Application extends Controller {
         return ok(index.render("Good to go", userForm, new IcdResultSet()));
     }
 
-    public Result search()
-    {
+    public Result search() {
 
         Form<models.SearchCriteria> userForm = Form.form(models.SearchCriteria.class).bindFromRequest();
         models.SearchCriteria c = userForm.get();
         try {
-            if (c.filter == null || c.filter.equals(""))
-            {
+            if (c.filter == null || c.filter.equals("")) {
                 return ok(index.render("Please type in the search term", userForm, new IcdResultSet()));
             }
 
             IcdResultSet codes = searchService.findDescription(c.filter);
-            String msg = String.format("%d codes found for %s.", codes.codeValues.size(), c.filter);
+            String s = "";
+            int count = codes.codeValues.size();
+            if (count > 1) s = "s";
+            String msg = String.format("%d code%s found for %s.", count, s, c.filter);
             return ok(index.render(msg, userForm, codes));
         } catch (Exception e) {
             String msg = e.toString();
-            return ok(index.render("Oh well..." + msg, userForm, new IcdResultSet()));
+            return ok(index.render("Oops!, Even a monkey could fall from a tree condition: " +
+                    msg, userForm, new IcdResultSet()));
         }
     }
 

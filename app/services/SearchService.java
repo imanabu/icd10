@@ -17,6 +17,7 @@ import play.Play;
 
 import java.io.File;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.*;
 
 import models.CodeValue;
@@ -48,6 +49,7 @@ public class SearchService {
             return resultSet; // empty list
         }
 
+        resultSet.tags.clear();
         String[] keywords = description.split(" ");
 
         StringBuilder sb = new StringBuilder();
@@ -93,10 +95,12 @@ public class SearchService {
                 CodeValue cv = new CodeValue();
                 cv.icd10Code = code;
                 cv.desc = desc;
+                cv.url = "https://google.com/search?q=" + URLEncoder.encode(desc, "UTF-8");
                 String[] words = desc.split("[  \\t\\r\\n\\v\\f,;]");
 
                 for(String w : words) {
-                    w = w.toLowerCase();
+                    w = w.toLowerCase().replace("(", "").replace(")","")
+                    .replace("[","").replace("]","");
                     if (resultSet.tags.contains(w)) continue;
                     if (exclude.indexOf(w) >= 0) continue;
                     resultSet.tags.add(w);
