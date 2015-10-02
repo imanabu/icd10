@@ -1,4 +1,4 @@
-@(message: String)(myForm: Form[models.SearchCriteria])(myCodes: Map[String, String])
+@(message: String)(myForm: Form[models.SearchCriteria])(myCodes: IcdResultSet)
 
 @main("Welcome to Play") {
     <div class="well">
@@ -6,10 +6,43 @@
         <h2>@message</h2>
 
         @helper.form(action = routes.Application.search()) {
-            @helper.inputText(myForm("filter"))
+            @helper.inputText(myForm("filter"), '_name -> "txtFilter")
         }
 
-        #{table myCodes /}
+        <div>
+            @for(oneTag <- myCodes.tags.toSeq) {
+                <button type="button" class="btn btn-info tags" data-tag="@oneTag">@oneTag</button>
+            }
+        </div>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ICD-10</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                @myCodes.codeValues.map { oneCodeValue =>
+                    <tr>
+                        <td>@oneCodeValue.icd10Code</td>
+                        <td>@oneCodeValue.desc</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
 
     </div>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        $('button.tags').on('click', function(e){
+            var $this = $(this);
+            var txtFieldEl = $('[name=filter');
+            //var searchQry = txtFieldEl.val() + ' ' +  $this.data('tag'));
+            txtFieldEl.val(txtFieldEl.val() + ' ' +  $this.data('tag'));
+            $('form').submit();
+        });
+    });
+</script>
 }

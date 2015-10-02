@@ -8,6 +8,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import com.sun.org.apache.xpath.internal.NodeSet;
+import models.IcdResultSet;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -16,8 +17,9 @@ import play.Play;
 
 import java.io.File;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
+import models.CodeValue;
 
 /**
  * Created by manabutokunaga on 10/1/15.
@@ -36,14 +38,31 @@ public class SearchService {
         Icd10Doc = builder.parse(new File(path));
     }
 
-    public Map<String, String> findDescription(String description) throws Exception {
+    public IcdResultSet findDescription(String description) throws Exception {
 
-        Map<String, String> codeValue = new HashMap<>();
+        IcdResultSet resultSet = new IcdResultSet();
+        List<CodeValue> codeValueList = resultSet.codeValues;
+
+        if (description == null || description.equals(""))
+        {
+            return resultSet; // empty list
+        }
+
+        String[] keywords = description.split(" ");
+
+        StringBuilder sb = new StringBuilder();
+        Boolean toAnd = false;
+
+        for(String keyword: keywords) {
+            if (toAnd) sb.append(" and ");
+            // sb.append(String.format("contains(.,'%s')", keyword));
+            sb.append(String.format("contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'%s')", keyword));
+            toAnd = true;
+        }
+
         XPath xpath = XPathFactory.newInstance().newXPath();
-        // String expression = "ICD10CM.tabular//version";
-        String expression = "//desc[contains(., description)]";
-        expression = String.format("//desc[contains(.,%s)]", description);
-        // Node node = (Node) xpath.evaluate(expression, Icd10Doc, XPathConstants.NODE);
+        // String expression = "//desc[contains(., description)]";
+        String expression = String.format("//desc[%s]", sb.toString());
         NodeList nodeList = (NodeList) xpath.evaluate(expression, Icd10Doc, XPathConstants.NODESET);
 
         Logger.debug("nodes found {}", nodeList.getLength());
@@ -68,11 +87,25 @@ public class SearchService {
                 }
             }
 
+            String exclude = "of in at other with without and or " + description.toLowerCase();
+
             if (code.equals("") == false) {
-                codeValue.put(code, desc);
+                CodeValue cv = new CodeValue();
+                cv.icd10Code = code;
+                cv.desc = desc;
+                String[] words = desc.split("[  \\t\\r\\n\\v\\f,;]");
+
+                for(String w : words) {
+                    w = w.toLowerCase();
+                    if (resultSet.tags.contains(w)) continue;
+                    if (exclude.indexOf(w) >= 0) continue;
+                    resultSet.tags.add(w);
+                }
+
+                codeValueList.add(cv);
             }
         }
 
-        return codeValue;
+        return resultSet;
     }
 }

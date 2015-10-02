@@ -1,6 +1,7 @@
 package controllers;
 
 
+import models.IcdResultSet;
 import play.*;
 import play.data.Form;
 import play.mvc.*;
@@ -11,12 +12,15 @@ import views.html.*;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import models.CodeValue;
 
 public class Application extends Controller {
 
     private SearchService searchService;
-    private Form<models.SearchCriteria> userForm = Form.form(models.SearchCriteria.class);
+
 
     public Application()
     {
@@ -30,25 +34,27 @@ public class Application extends Controller {
 
     public Result index() {
 
-        return ok(index.render("Good to go", userForm, null));
+        Form<models.SearchCriteria> userForm = Form.form(models.SearchCriteria.class);
+        return ok(index.render("Good to go", userForm, new IcdResultSet()));
     }
 
     public Result search()
     {
+
+        Form<models.SearchCriteria> userForm = Form.form(models.SearchCriteria.class).bindFromRequest();
+        models.SearchCriteria c = userForm.get();
         try {
-            models.SearchCriteria c = userForm.bindFromRequest().get();
             if (c.filter == null || c.filter.equals(""))
             {
-                return ok(index.render("Please type in the search term", userForm, null));
+                return ok(index.render("Please type in the search term", userForm, new IcdResultSet()));
             }
 
-            String quoted = String.format("'%s'", c.filter);
-            Map<String, String> codes = searchService.findDescription(quoted);
-            String msg = String.format("%d terms found for %s.", codes.size(), quoted);
+            IcdResultSet codes = searchService.findDescription(c.filter);
+            String msg = String.format("%d codes found for %s.", codes.codeValues.size(), c.filter);
             return ok(index.render(msg, userForm, codes));
         } catch (Exception e) {
             String msg = e.toString();
-            return ok(index.render("Oh well..." + msg, userForm, null));
+            return ok(index.render("Oh well..." + msg, userForm, new IcdResultSet()));
         }
     }
 
