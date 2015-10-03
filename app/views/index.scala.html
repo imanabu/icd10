@@ -10,7 +10,7 @@
             }
             <span style="color:gray;">@message</span>
         </div>
-        <div>
+        <div id="btn-tray">
             <a class="btn btn-warning" type="button" href="/">Start Over</a>
             @for(oneTag <- myCodes.tags.toSeq) {
                 <button type="button" class="btn btn-info tags" data-tag="@oneTag">@oneTag</button>
@@ -40,7 +40,7 @@
 <script type="text/javascript">
     $(document).ready(function(){
 
-        $('button.tags').on('tap', function(e){
+        $('button.tags').on('click', function(e){
         var $this = $(this);
         var txtFieldEl = $('[name=filter');
         //var searchQry = txtFieldEl.val() + ' ' +  $this.data('tag'));
@@ -48,13 +48,6 @@
         $('form').submit();
         });
 
-               $('button.tags').on('click', function(e){
-            var $this = $(this);
-            var txtFieldEl = $('[name=filter');
-            //var searchQry = txtFieldEl.val() + ' ' +  $this.data('tag'));
-            txtFieldEl.val(txtFieldEl.val() + ' ' +  $this.data('tag'));
-            $('form').submit();
-        });
     });
 </script>
 }
