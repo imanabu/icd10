@@ -8,6 +8,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import services.SearchService;
 import views.html.index;
+import views.html.lic;
 
 public class Application extends Controller {
 
@@ -25,7 +26,12 @@ public class Application extends Controller {
     public Result index() {
 
         Form<models.SearchCriteria> userForm = Form.form(models.SearchCriteria.class);
-        return ok(index.render("Good to go", userForm, new IcdResultSet()));
+        return ok(index.render("We are ready!", userForm, new IcdResultSet()));
+    }
+
+    public Result lic()
+    {
+        return ok(lic.render());
     }
 
     public Result search() {
@@ -34,14 +40,24 @@ public class Application extends Controller {
         models.SearchCriteria c = userForm.get();
         try {
             if (c.filter == null || c.filter.equals("")) {
-                return ok(index.render("Please type in the search term", userForm, new IcdResultSet()));
+                return ok(index.render("Also you can tap a button below to begin.", userForm, new IcdResultSet()));
             }
 
             IcdResultSet codes = searchService.findDescription(c.filter);
             String s = "";
             int count = codes.codeValues.size();
             if (count > 1) s = "s";
-            String msg = String.format("%d code%s found for %s.", count, s, c.filter);
+
+            String msg = String.format("Prefect! Only %d code%s for %s.", count, s, c.filter);
+
+            if (count > 20) {
+                msg = String.format("Wow! %d code%s for %s. Tap a button below to quickly narrow the search.", count, s, c.filter);
+            }
+            else if (count == 0)
+            {
+                msg = String.format("Sorry! Nothing for %s. Please start over.", c.filter);
+            }
+
             return ok(index.render(msg, userForm, codes));
         } catch (Exception e) {
             String msg = e.toString();

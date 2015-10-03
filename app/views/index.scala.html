@@ -1,24 +1,26 @@
 @(message: String)(myForm: Form[models.SearchCriteria])(myCodes: IcdResultSet)
 
 @main("WinguMD.com ICD-10 Fast Search") {
-    <div class="well">
-        <H1>WinguMD ICD-10 Lookup</H1>
-        <h3>@message</h3>
-        @helper.form(action = routes.Application.search()) {
-            @helper.inputText(myForm("filter"), '_label -> "Add a few keywords describing the condition, and press Enter.", 'size -> 75)
-        }
 
-
-        <h3>Or, add more keywords from these buttons.</h3>
-
-        <div>
-            <a class="btn btn-warning" type="button" href="/">Start Over</a>
-            @for(oneTag <- myCodes.tags.toSeq) {
-                <button type="button" class="btn btn-info tags" data-tag="@oneTag">@oneTag</button>
-            }
+    <div class="jumbotron">
+        <div class="container text-center">
+            <div class="span12">
+                <h2>ICD-10 Fast Search BETA</h2>
+                @helper.form(action = routes.Application.search()) {
+                    @helper.inputText(myForm("filter"), '_label -> "Add just a few keywords describing the condition, and press Enter.", 'size -> 65)
+                }
+            </div>
+            <span style="color:gray;">@message</span>
+            <div>
+                <a class="btn btn-warning" type="button" href="/">Start Over</a>
+                @for(oneTag <- myCodes.tags.toSeq) {
+                    <button type="button" class="btn btn-info tags" data-tag="@oneTag">@oneTag</button>
+                }
+            </div>
         </div>
-
-
+    </div>
+    <div class="well">
+        <span style="color:gray;">Tap the ICD-10 code to explore more on the web.</span>
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -27,17 +29,15 @@
                 </tr>
             </thead>
             <tbody>
-                @myCodes.codeValues.map { oneCodeValue =>
-                    <tr>
-                        <td><a type="button" class="btn btn-success" href="@oneCodeValue.url" target="_blank">@oneCodeValue.icd10Code</a></td>
-                        <td>@oneCodeValue.desc</td>
-                    </tr>
-                }
+            @myCodes.codeValues.map { oneCodeValue =>
+                <tr>
+                    <td><a type="button" class="btn btn-success" href="@oneCodeValue.url" target="_blank">@oneCodeValue.icd10Code</a></td>
+                    <td>@oneCodeValue.desc</td>
+                </tr>
+            }
             </tbody>
         </table>
-
     </div>
-
 <script type="text/javascript">
     $(document).ready(function(){
         $('button.tags').on('click', function(e){

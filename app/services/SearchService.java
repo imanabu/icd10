@@ -58,7 +58,9 @@ public class SearchService {
         for(String keyword: keywords) {
             if (toAnd) sb.append(" and ");
             // sb.append(String.format("contains(.,'%s')", keyword));
-            sb.append(String.format("contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'%s')", keyword));
+            sb.append(String.format(
+                    "contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'%s')",
+                    keyword));
             toAnd = true;
         }
 
@@ -89,7 +91,7 @@ public class SearchService {
                 }
             }
 
-            String exclude = "of in at other with without and or " + description.toLowerCase();
+            String exclude = "of in at other with without and or to from not on by" + description.toLowerCase();
 
             if (code.equals("") == false) {
                 CodeValue cv = new CodeValue();
