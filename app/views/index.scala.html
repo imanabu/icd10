@@ -8,7 +8,7 @@
             @helper.form(action = routes.Application.search()) {
                 @helper.inputText(myForm("filter"), '_label -> "Add just a few keywords describing the condition, and press Enter.", 'size -> 35)
             }
-            <span style="color:gray;">@message</span>
+            <H4>@message</H4>
         </div>
         <div id="btn-tray">
             <a class="btn btn-warning" type="button" href="/">Start Over</a>
@@ -19,6 +19,7 @@
     </div>
 
     <div class="container-fluid" style="cursor:pointer;">
+        <P>&nbsp;</P>
         <span style="color:gray;">Tap the ICD-10 code to explore more on the web.</span>
         <table class="table table-striped">
             <thead>
