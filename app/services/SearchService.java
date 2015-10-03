@@ -50,7 +50,7 @@ public class SearchService {
         }
 
         resultSet.tags.clear();
-        String[] keywords = description.split(" ");
+        String[] keywords = description.toLowerCase().split(" ");
 
         StringBuilder sb = new StringBuilder();
         Boolean toAnd = false;
@@ -65,7 +65,6 @@ public class SearchService {
         }
 
         XPath xpath = XPathFactory.newInstance().newXPath();
-        // String expression = "//desc[contains(., description)]";
         String expression = String.format("//desc[%s]", sb.toString());
         NodeList nodeList = (NodeList) xpath.evaluate(expression, Icd10Doc, XPathConstants.NODESET);
 
