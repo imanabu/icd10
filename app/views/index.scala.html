@@ -39,19 +39,21 @@
     </div>
 <script type="text/javascript">
     $(document).ready(function(){
-        $('button.tags').on('click', function(e){
-            var $this = $(this);
-            var txtFieldEl = $('[name=filter');
-            //var searchQry = txtFieldEl.val() + ' ' +  $this.data('tag'));
-            txtFieldEl.val(txtFieldEl.val() + ' ' +  $this.data('tag'));
-            $('form').submit();
-        });
+
         $('button.tags').on('tap', function(e){
         var $this = $(this);
         var txtFieldEl = $('[name=filter');
         //var searchQry = txtFieldEl.val() + ' ' +  $this.data('tag'));
         txtFieldEl.val(txtFieldEl.val() + ' ' +  $this.data('tag'));
         $('form').submit();
+        });
+
+               $('button.tags').on('click', function(e){
+            var $this = $(this);
+            var txtFieldEl = $('[name=filter');
+            //var searchQry = txtFieldEl.val() + ' ' +  $this.data('tag'));
+            txtFieldEl.val(txtFieldEl.val() + ' ' +  $this.data('tag'));
+            $('form').submit();
         });
     });
 </script>
