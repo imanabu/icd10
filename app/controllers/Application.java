@@ -26,7 +26,7 @@ public class Application extends Controller {
     public Result index() {
 
         Form<models.SearchCriteria> userForm = Form.form(models.SearchCriteria.class);
-        return ok(index.render("We are ready!", userForm, new IcdResultSet()));
+        return ok(index.render("Also you can tap a button below to begin.", userForm, new IcdResultSet()));
     }
 
     public Result lic()
