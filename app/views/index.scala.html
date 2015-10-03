@@ -5,6 +5,7 @@
     <div class="container-fluid">
         <div class="span12 text-center">
             <h2>ICD-10 Fast Search BETA</h2>
+            <h4>Find Your ICD-10 Code in Just a Few Mobile Taps</h4>
             @helper.form(action = routes.Application.search()) {
                 @helper.inputText(myForm("filter"), '_label -> "Add just a few keywords describing the condition, and press Enter.", 'size -> 35)
             }
