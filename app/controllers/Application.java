@@ -48,10 +48,10 @@ public class Application extends Controller {
             int count = codes.codeValues.size();
             if (count > 1) s = "s";
 
-            String msg = String.format("Perfect! Only %d code%s for %s. Scroll down to the list.", count, s, c.filter);
+            String msg = String.format("Perfect! Only %d code%s for %s. Please scroll down to see the results.", count, s, c.filter);
 
             if (count > 20) {
-                msg = String.format("Wow! %d code%s for %s. Tap a button below to quickly narrow the search.", count, s, c.filter);
+                msg = String.format("Wow! %d code%s for %s. Tap a button below to quickly narrow your search.", count, s, c.filter);
             }
             else if (count == 0)
             {

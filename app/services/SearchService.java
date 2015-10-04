@@ -50,7 +50,9 @@ public class SearchService {
         }
 
         resultSet.tags.clear();
-        String[] keywords = description.toLowerCase().split(" ");
+        String[] keywords = description.toLowerCase()
+                .replace("*","")
+                .split(" ");
 
         StringBuilder sb = new StringBuilder();
         Boolean toAnd = false;
