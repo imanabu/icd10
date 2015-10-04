@@ -51,7 +51,7 @@ public class SearchService {
 
         resultSet.tags.clear();
         String[] keywords = description.toLowerCase()
-                .replace("*","")
+                .replace("*", "")
                 .split(" ");
 
         StringBuilder sb = new StringBuilder();
@@ -71,8 +71,8 @@ public class SearchService {
         NodeList nodeList = (NodeList) xpath.evaluate(expression, Icd10Doc, XPathConstants.NODESET);
 
         Logger.debug("nodes found {}", nodeList.getLength());
-
-        for(int j = 0; j < nodeList.getLength(); j++){
+        int nodeCount = nodeList.getLength();
+        for(int j = 0; j < nodeCount; j++){
             Node node = nodeList.item(j).getParentNode();
             NodeList c = node.getChildNodes();
 
@@ -92,7 +92,7 @@ public class SearchService {
                 }
             }
 
-            String exclude = "of in at other with without and or to from not on by" + description.toLowerCase();
+            String exclude = "of in at other is are and or to from not on by" + description.toLowerCase();
 
             if (code.equals("") == false) {
                 CodeValue cv = new CodeValue();
@@ -112,6 +112,8 @@ public class SearchService {
                 codeValueList.add(cv);
             }
         }
+
+        if (nodeCount < 2) resultSet.tags.clear();
 
         return resultSet;
     }

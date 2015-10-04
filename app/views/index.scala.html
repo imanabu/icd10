@@ -1,4 +1,5 @@
 @(message: String)(myForm: Form[models.SearchCriteria])(myCodes: IcdResultSet)
+@import java.lang.String; var first=""
 
 @main("WinguMD.com ICD-10 Fast Search") {
 
@@ -12,10 +13,17 @@
             <H4>@message</H4>
         </div>
         <div id="btn-tray">
-            <a class="btn btn-warning" type="button" href="/">Start Over</a>
-            @for(oneTag <- myCodes.tags.toSeq) {
-                <button type="button" class="btn btn-primary tags clickable" data-tag="@oneTag">@oneTag</button>
-            }
+                <a class="btn btn-warning" type="button" href="/">Start Over</a>
+                @for(oneTag <- myCodes.tags.toSeq) {
+                    @if(first != oneTag.charAt(0).toString().toUpperCase()) {
+                        @(first = oneTag.charAt(0).toString().toUpperCase())
+                        @if(first >= "A" && first <= "Z") {
+                            <button type="button" class="btn btn-success disabled">@first</button>
+                        }
+                    }
+                    <button type="button" class="btn btn-primary tags clickable" data-tag="@oneTag">@oneTag</button>
+                }
+
         </div>
     </div>
 
