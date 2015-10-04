@@ -1,0 +1,1 @@
+activator -J-Xms1G -J-Xmx2G "run -Dhttps.port=9443 -Dhttp.port=disabled -Dhttps.keyStore=E:\bmsserver\wingumd.net.ssl\test.bodymapsnap.com.pkcs12 -Dhttps.keyStoreType=pkcs12 -Dhttps.keyStorePassword=3W6t4pXZYJpwXb28"
