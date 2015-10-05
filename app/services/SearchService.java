@@ -142,6 +142,7 @@ public class SearchService {
                         cv.icd10Code = code2 + subCode;
                         resultSet.subCodes.add(subCode);
                         cv.desc = desc + ", " + seventh.get(subCode);
+                        cv.url = cvurl;
                         codeValueList.add(cv);
                     }
                 }
