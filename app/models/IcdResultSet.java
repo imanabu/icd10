@@ -17,8 +17,16 @@ public class IcdResultSet {
         for(String t: base.split(" ")) {
             this.tags.add(t);
         }
+
+        subCodes = new TreeSet<>();
+    }
+
+    public void clearCodesIfTooMany(int threshold) {
+        if (codeValues.size() > threshold)
+            codeValues.clear();
     }
 
     public Set<String> tags;
     public List<CodeValue> codeValues;
+    public Set<String> subCodes;
 }
