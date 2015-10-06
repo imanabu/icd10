@@ -74,7 +74,7 @@ public class Application extends Controller {
 
             StringBuilder msg = new StringBuilder();
 
-
+            List<String> addTerms2 = addTerms;
 
             if (count > 20) {
                 codes.clearCodesIfTooMany(250);
@@ -83,10 +83,12 @@ public class Application extends Controller {
             else if (count == 0)
             {
                 msg.append(String.format("Sorry! Nothing for %s. Please start over.", c.filter));
+                addTerms2 = new ArrayList<>();
             }
             else
             {
                 msg.append(String.format("Perfect! Only %d code%s for %s. Please scroll down to see the results. ", count, s, c.filter));
+                addTerms2 = new ArrayList<>();
             }
 
             if (codes.subCodes.size() > 0)
@@ -104,7 +106,7 @@ public class Application extends Controller {
                 msg.append("in effect!");
             }
 
-            return ok(index.render(msg.toString(), userForm, codes, addTerms));
+            return ok(index.render(msg.toString(), userForm, codes, addTerms2));
         } catch (Exception e) {
             String msg = e.toString();
             return ok(index.render("Oops!, Even a monkey could fall from a tree condition: " +
