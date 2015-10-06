@@ -1,29 +1,28 @@
 package services;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
-import com.sun.org.apache.xpath.internal.NodeSet;
+import models.CodeValue;
 import models.IcdResultSet;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.yaml.snakeyaml.util.UriEncoder;
 import play.Logger;
 import play.Play;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.*;
-
-import models.CodeValue;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
+ * ICD-10 Search Service
  * Created by manabutokunaga on 10/1/15.
  */
 public class SearchService {
@@ -35,6 +34,10 @@ public class SearchService {
     {
         if (Icd10Doc != null) return;
         URL icd10Uri = Play.application().classloader().getResource("icd10/Tabular.xml");
+        if (icd10Uri == null) {
+            Logger.error("icd10/Tabular.xml should be found in config directory");
+            return;
+        }
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         String path = icd10Uri.toString().replace("file:", "");
         Logger.debug(path);
@@ -62,8 +65,8 @@ public class SearchService {
 
         for(String keyword: keywords) {
             if (toAnd) sb.append(" and ");
-            // sb.append(String.format("contains(.,'%s')", keyword));
             String encKeyword =  keyword.replace("'s", "");
+            // Hack to make toLower() like search to work in V1.0 of XPATH Java Lib
             sb.append(String.format(
                     "contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'%s')",
                     encKeyword));
@@ -77,7 +80,7 @@ public class SearchService {
         Logger.debug("nodes found {}", nodeList.getLength());
         int nodeCount = nodeList.getLength();
 
-        Map<String, String> seventh = null;
+        Map<String, String> seventh;
 
         for(int j = 0; j < nodeCount; j++){
             Node node = nodeList.item(j).getParentNode();
@@ -101,7 +104,7 @@ public class SearchService {
 
             String exclude = "of in at other is are and or to from not on by" + description.toLowerCase();
 
-            if (code.equals("") == false) {
+            if (!code.equals("")) {
 
                 seventh = null;
 
@@ -118,20 +121,22 @@ public class SearchService {
 
                 // if (code.contains(seventhBase) == false) seventh = null;
 
-                String cvurl = "https://google.com/search?q=" + URLEncoder.encode(desc, "UTF-8");
+                String googleUrl = "https://google.com/search?q=" + URLEncoder.encode(desc, "UTF-8");
 
-                String[] words = desc.split("[  \\t\\r\\n\\v\\f,;]");
+                String[] words = desc.split("[ \\t\\r\\n\\v\\f,;]");
 
                 for(String w : words) {
                     w = w.toLowerCase().replace("(", "").replace(")","")
                     .replace("[","").replace("]","");
                     if (resultSet.tags.contains(w)) continue;
-                    if (exclude.indexOf(w) >= 0) continue;
+                    if (exclude.contains(w)) continue;
                     resultSet.tags.add(w);
                 }
 
                 if (seventh != null && code.length() > 3)
                 {
+                    // Makes shorter codes to comply with full 7-place. If sub-code is
+                    // not known, an X will be placed on lower digits.
                     for(String subCode: seventh.keySet()) {
                         CodeValue cv = new CodeValue();
                         String code2 = code;
@@ -142,7 +147,7 @@ public class SearchService {
                         cv.icd10Code = code2 + subCode;
                         resultSet.subCodes.add(subCode);
                         cv.desc = desc + ", " + seventh.get(subCode);
-                        cv.url = cvurl;
+                        cv.url = googleUrl;
                         codeValueList.add(cv);
                     }
                 }
@@ -150,7 +155,7 @@ public class SearchService {
                     CodeValue cv = new CodeValue();
                     cv.icd10Code = code;
                     cv.desc = desc;
-                    cv.url = cvurl;
+                    cv.url = googleUrl;
                     codeValueList.add(cv);
                 }
             }
@@ -167,7 +172,7 @@ public class SearchService {
 
         Map<String, Map<String, String>> sevenCharRuleSet = new HashMap<>();
         XPath xpath = XPathFactory.newInstance().newXPath();
-        String expression = String.format("//sevenChrDef/..");
+        String expression = "//sevenChrDef/..";
         NodeList nodeList = (NodeList) xpath.evaluate(expression, Icd10Doc, XPathConstants.NODESET);
         int ruleNodesCount = nodeList.getLength();
 
@@ -184,17 +189,17 @@ public class SearchService {
                 Node node = nodes.item(i);
                 String nodeName = node.getNodeName();
 
-                if (nodeName == "name")
+                if (nodeName.equals("name"))
                 {
                     code = node.getFirstChild().getNodeValue();
                     // Logger.debug(code);
                 }
-                else if (nodeName == "sevenChrDef") {
+                else if (nodeName.equals("sevenChrDef")) {
                     NodeList ruleLetters = node.getChildNodes();
                     for(int k = 0; k < ruleLetters.getLength(); k++)
                     {
                         Node item = ruleLetters.item(k);
-                        if (item.getNodeName() == "extension") {
+                        if (item.getNodeName().equals("extension")) {
                             String key = item.getAttributes().getNamedItem("char").getNodeValue();
                             String desc = item.getFirstChild().getNodeValue();
                             seventh.put(key, desc);

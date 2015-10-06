@@ -1,4 +1,4 @@
-@(message: String)(myForm: Form[models.SearchCriteria])(myCodes: IcdResultSet)
+@(message: String)(myForm: Form[models.SearchCriteria])(myCodes: IcdResultSet)(addTerms:List[String])
 @import java.lang.String; var first=""
 
 @main("WinguMD.com ICD-10 Fast Search") {
@@ -10,13 +10,19 @@
             <h6>*ICD-10 CM FY 2016</h6>
 
             @helper.form(action = routes.Application.search()) {
-                @helper.inputText(myForm("filter"), '_label -> "Add just a few keywords describing the condition, and press Enter.", 'size -> 35)
+                @helper.inputText(myForm("filter"), '_label -> "Add just a few partial keywords describing the condition, and press Enter.", 'size -> 35)
             }
             <H4>@message</H4>
         </div>
+        <div id="btn-add-terms">
+            <a class="btn btn-warning" type="button" href="/">Start Over</a>
+            @for(term <- addTerms) {
+                <button type="button" class="btn btn-default addon" data-addon="@term">@term</button>
+            }
+        </div>
         <div id="btn-tray">
-                <a class="btn btn-warning" type="button" href="/">Start Over</a>
-                @for(oneTag <- myCodes.tags.toSeq) {
+            @for(oneTag <- myCodes.tags.toSeq) {
+                @if(oneTag != "") {
                     @if(first != oneTag.charAt(0).toString().toUpperCase()) {
                         @(first = oneTag.charAt(0).toString().toUpperCase())
                         @if(first >= "A" && first <= "Z") {
@@ -25,6 +31,7 @@
                     }
                     <button type="button" class="btn btn-primary tags clickable" data-tag="@oneTag">@oneTag</button>
                 }
+            }
 
         </div>
     </div>
@@ -61,11 +68,16 @@
         $('button.tags').on('click', function(e){
         var $this = $(this);
         var txtFieldEl = $('[name=filter]');
-        //var searchQry = txtFieldEl.val() + ' ' +  $this.data('tag'));
         txtFieldEl.val(txtFieldEl.val() + ' ' +  $this.data('tag'));
         $('form').submit();
         });
 
+       $('button.addon').on('click', function(e){
+        var $this = $(this);
+        var txtFieldEl = $('[name=filter]');
+        txtFieldEl.val(txtFieldEl.val() + ' ' +  $this.data('addon'));
+        $('form').submit();
+        });
     });
 </script>
 }

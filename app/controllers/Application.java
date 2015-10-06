@@ -10,16 +10,25 @@ import services.SearchService;
 import views.html.index;
 import views.html.lic;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class Application extends Controller {
 
     private SearchService searchService;
+    private List<String> addTerms;
 
 
     public Application() {
         try {
             searchService = new SearchService();
+            addTerms = new ArrayList<>();
+            String list = "right left proximal midial distal peripheral exterm* upper lower lateral anterior posterior frontal " +
+                    "extra inner outer head ear eye nose mouth neck chest back arm buttock thigh leg foot";
+            for(String t: list.split(" ")) {
+                addTerms.add(t);
+            }
         } catch (Exception ex) {
             Logger.error("Construction failed due to " + ex.toString());
         }
@@ -28,7 +37,9 @@ public class Application extends Controller {
     public Result index() {
 
         Form<models.SearchCriteria> userForm = Form.form(models.SearchCriteria.class);
-        return ok(index.render("Also you can tap a button below to begin.", userForm, new IcdResultSet()));
+        return ok(index.render("Also you can add a few applicable anatomical terms below.", userForm, new IcdResultSet(),
+                addTerms
+        ));
     }
 
     public Result lic()
@@ -42,7 +53,17 @@ public class Application extends Controller {
         models.SearchCriteria c = userForm.get();
         try {
             if (c.filter == null || c.filter.equals("")) {
-                return ok(index.render("Also you can tap a button below to begin.", userForm, new IcdResultSet()));
+                return ok(index.render("Also you can tap a few anatomical terms to demo.", userForm, new IcdResultSet(),
+                        addTerms));
+            }
+
+            String[] terms = c.filter.trim().split(" ");
+
+            if (terms.length <= 1) {
+                if (addTerms.contains(terms[0])) {
+                    return ok(index.render("Click one more term from below or type in a term above.", userForm, new IcdResultSet(),
+                            addTerms));
+                }
             }
 
             IcdResultSet codes = searchService.findDescription(c.filter);
@@ -83,11 +104,12 @@ public class Application extends Controller {
                 msg.append("in effect!");
             }
 
-            return ok(index.render(msg.toString(), userForm, codes));
+            return ok(index.render(msg.toString(), userForm, codes, addTerms));
         } catch (Exception e) {
             String msg = e.toString();
             return ok(index.render("Oops!, Even a monkey could fall from a tree condition: " +
-                    msg, userForm, new IcdResultSet()));
+                    msg, userForm, new IcdResultSet(),
+                    addTerms));
         }
     }
 
