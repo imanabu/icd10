@@ -213,4 +213,13 @@ public class SearchService {
         }
         return sevenCharRuleSet;
     }
+
+    public String FindExludes(Node codedNode) throws Exception {
+
+        String expression = "//sevenChrDef/..";
+        XPath xpath = XPathFactory.newInstance().newXPath();
+        NodeList nodeList = (NodeList) xpath.evaluate(expression, Icd10Doc, XPathConstants.NODESET);
+
+        return "";
+    }
 }
