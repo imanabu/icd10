@@ -1,6 +1,7 @@
 package services;
 
 import models.CodeValue;
+import models.Exclusion;
 import models.IcdResultSet;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -29,6 +30,7 @@ public class SearchService {
 
     private static Document Icd10Doc = null;
     private static Map<String, Map<String, String>> SeventhCharRules;
+    private static Map<String, Exclusion> Exclusions;
 
     public SearchService() throws Exception
     {
@@ -43,6 +45,7 @@ public class SearchService {
         Logger.debug(path);
         Icd10Doc = builder.parse(new File(path));
         SeventhCharRules = Load7CharRules();
+        Exclusions = new HashMap<>();
     }
 
     public IcdResultSet findDescription(String description) throws Exception {
@@ -88,24 +91,50 @@ public class SearchService {
 
             String code = "";
             String desc = "";
+            String included = "";
+            Exclusion excluded = null;
+            StringBuilder extraPhrases = new StringBuilder();
 
             for (int i = 0; i < c.getLength(); i++) {
                 Node m = c.item(i);
-                if (m.getNodeName().equals("name")) {
+                String name = m.getNodeName();
+                if (name.equals("diag")) break; // all done, hit the next one
+                if (name.equals("name")) {
                     code = m.getFirstChild().getNodeValue();
+                    excluded = FindExludes(m, code);
+                    if (excluded != null) {
+                        if (excluded.excludes1 != "") {
+                            extraPhrases.append("Excludes: " + excluded.excludes1 + ".");
+                        }
+                        if (excluded.excludes2 != "") {
+                            extraPhrases.append("Consider Instead: " + excluded.excludes2 + ".");
+                        }
+                    }
                     continue;
                 }
-
-                if (m.getNodeName().equals("desc")) {
+                else if (name.equals("desc")) {
                     desc = m.getFirstChild().getNodeValue();
-                    break;
+                }
+                else if (name.equals("inclusionTerm")) {
+                    NodeList notes = m.getChildNodes();
+                    for(int i2=0; i2 < notes.getLength(); i2++) {
+
+                        String note = notes.item(i2).getTextContent();
+                        if (note != null && !note.equals("") && !note.equals("\n"))
+                            included += note;
+                    }
+                }
+                else if (name.equals("codeFirst")) {
+                    extraPhrases.append(" Code First:" + m.getTextContent() + ".");
+                }
+                else if (name.equals("useAdditionalCode")) {
+                    extraPhrases.append(" Use Additional Code:" + m.getTextContent() + ".");
                 }
             }
 
             String exclude = "of in at other is are and or to from not on by" + description.toLowerCase();
 
             if (!code.equals("")) {
-
                 seventh = null;
 
                 for (int cl = code.length() - 1; cl >= 2; cl--)
@@ -119,10 +148,7 @@ public class SearchService {
                     }
                 }
 
-                // if (code.contains(seventhBase) == false) seventh = null;
-
                 String googleUrl = "https://google.com/search?q=" + URLEncoder.encode(desc, "UTF-8");
-
                 String[] words = desc.split("[ \\t\\r\\n\\v\\f,;]");
 
                 for(String w : words) {
@@ -147,6 +173,12 @@ public class SearchService {
                         cv.icd10Code = code2 + subCode;
                         resultSet.subCodes.add(subCode);
                         cv.desc = desc + ", " + seventh.get(subCode);
+                        if (included.equals("") == false) {
+                            cv.desc += ". Includes: " + included;
+                        }
+                        if (extraPhrases.length() > 0) {
+                            cv.desc += " " + extraPhrases.toString();
+                        }
                         cv.url = googleUrl;
                         codeValueList.add(cv);
                     }
@@ -156,6 +188,12 @@ public class SearchService {
                     cv.icd10Code = code;
                     cv.desc = desc;
                     cv.url = googleUrl;
+                    if (included.equals("") == false) {
+                        cv.desc += ". Includes: " + included;
+                    }
+                    if (extraPhrases.length() > 0) {
+                        cv.desc += ". " + extraPhrases.toString();
+                    }
                     codeValueList.add(cv);
                 }
             }
@@ -214,12 +252,56 @@ public class SearchService {
         return sevenCharRuleSet;
     }
 
-    public String FindExludes(Node codedNode) throws Exception {
+    public Exclusion FindExludes(Node codeNode, String code) throws Exception {
+        Exclusion exc = null;
 
-        String expression = "//sevenChrDef/..";
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        NodeList nodeList = (NodeList) xpath.evaluate(expression, Icd10Doc, XPathConstants.NODESET);
+        if (Exclusions.containsKey(code))
+        {
+            Logger.debug("Already have " + code);
+            return Exclusions.get(code);
+        }
 
-        return "";
+        Node current = codeNode.getParentNode();
+        int codeLen = code.length();
+
+        for(int c = codeLen; c >= 3; c--) {
+            if (c == 4) continue;
+            String currentCode = code.substring(0,c);
+            Logger.debug("code lookup " + currentCode );
+
+            NodeList nodes = current.getChildNodes();
+
+            String excludes1 = "";
+            String excludes2 = "";
+
+            for(int n = 0; n < nodes.getLength(); n++) {
+                Node m = nodes.item(n);
+                String s = m.getNodeName();
+                if (s.equals("excludes1")) {
+                    String notes = m.getTextContent();
+                    excludes1 = notes;
+                }
+                else if (s.equals("excludes2")) {
+                    String notes = m.getTextContent();
+                    excludes2 = notes;
+                }
+            }
+
+            exc = null;
+
+            if (!excludes1.equals("") || !excludes2.equals("")) {
+                exc = new Exclusion();
+                exc.excludes1 = excludes1;
+                exc.excludes2 = excludes2;
+                Exclusions.put(currentCode, exc);
+                return exc;
+            }
+            else {
+                Exclusions.put(currentCode, null);
+            }
+            current = current.getParentNode();
+        }
+
+        return null;
     }
 }
