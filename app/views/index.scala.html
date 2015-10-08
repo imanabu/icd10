@@ -10,7 +10,7 @@
             <h6>*ICD-10 CM FY 2016</h6>
 
             @helper.form(action = routes.Application.search()) {
-                @helper.inputText(myForm("filter"), '_label -> "Add just a few partial keywords describing the condition, and press Enter.", 'size -> 35)
+                @helper.inputText(myForm("filter"), '_label -> "Add just a few partial keywords or a single code, and press Enter.", 'size -> 35)
             }
             <H4>@message</H4>
         </div>
@@ -55,7 +55,14 @@
             @myCodes.codeValues.map { oneCodeValue =>
                 <tr>
                     <td><a type="button" class="btn btn-success" href="@oneCodeValue.url" target="_blank">@oneCodeValue.icd10Code</a></td>
-                    <td>@oneCodeValue.desc</td>
+                    <td>@Html(oneCodeValue.desc)
+                        @if(oneCodeValue.foundCodes.size() > 0) {
+                        <br/>Quick Link:
+                        @oneCodeValue.foundCodes.map { foundCode =>
+                            <a type="button" class="btn btn-info btn-xs" href="/search?filter=@foundCode">@foundCode</a>
+                         }
+                    }
+                    </td>
                 </tr>
             }
             </tbody>
