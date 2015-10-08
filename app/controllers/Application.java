@@ -24,7 +24,7 @@ public class Application extends Controller {
         try {
             searchService = new SearchService();
             addTerms = new ArrayList<>();
-            String list = "right left proximal midial distal peripheral exterm* upper lower lateral anterior posterior frontal " +
+            String list = "right left proximal medial distal peripheral exterm* upper lower lateral anterior posterior frontal " +
                     "extra inner outer head ear eye nose mouth neck chest back arm buttock thigh leg foot";
             for(String t: list.split(" ")) {
                 addTerms.add(t);

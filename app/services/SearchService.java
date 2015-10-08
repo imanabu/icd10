@@ -30,7 +30,13 @@ public class SearchService {
 
     private static Document Icd10Doc = null;
     private static Map<String, Map<String, String>> SeventhCharRules;
-    private static Map<String, Exclusion> Exclusions;
+
+    private Map<String, Exclusion> Exclusions;
+    private Map<String, String> Includes;
+    private Map<String, String> CodeAlso;
+    private Map<String, String> CodeFirst;
+    private Map<String, String> UseAdditionalCode;
+    private Map<String, String> InclusionTerm;
 
     public SearchService() throws Exception
     {
@@ -49,6 +55,13 @@ public class SearchService {
     }
 
     public IcdResultSet findDescription(String description) throws Exception {
+
+        Exclusions = new HashMap<>();
+        Includes = new HashMap<>();
+        CodeFirst = new HashMap<>();
+        CodeAlso = new HashMap<>();
+        UseAdditionalCode = new HashMap<>();
+        InclusionTerm = new HashMap<>();
 
         IcdResultSet resultSet = new IcdResultSet();
         List<CodeValue> codeValueList = new ArrayList<>();
@@ -99,36 +112,14 @@ public class SearchService {
                 Node m = c.item(i);
                 String name = m.getNodeName();
                 if (name.equals("diag")) break; // all done, hit the next one
-                if (name.equals("name")) {
-                    code = m.getFirstChild().getNodeValue();
-                    excluded = FindExludes(m, code);
-                    if (excluded != null) {
-                        if (excluded.excludes1 != "") {
-                            extraPhrases.append("Excludes: " + excluded.excludes1 + ".");
-                        }
-                        if (excluded.excludes2 != "") {
-                            extraPhrases.append("Consider Instead: " + excluded.excludes2 + ".");
-                        }
-                    }
-                    continue;
-                }
-                else if (name.equals("desc")) {
-                    desc = m.getFirstChild().getNodeValue();
-                }
-                else if (name.equals("inclusionTerm")) {
-                    NodeList notes = m.getChildNodes();
-                    for(int i2=0; i2 < notes.getLength(); i2++) {
-
-                        String note = notes.item(i2).getTextContent();
-                        if (note != null && !note.equals("") && !note.equals("\n"))
-                            included += note;
-                    }
-                }
-                else if (name.equals("codeFirst")) {
-                    extraPhrases.append(" Code First:" + m.getTextContent() + ".");
-                }
-                else if (name.equals("useAdditionalCode")) {
-                    extraPhrases.append(" Use Additional Code:" + m.getTextContent() + ".");
+                switch (name) {
+                    case "name":
+                        code = m.getFirstChild().getNodeValue();
+                        BuildExtrasMap(m, code);
+                        break;
+                    case "desc":
+                        desc = m.getFirstChild().getNodeValue();
+                        break;
                 }
             }
 
@@ -159,6 +150,17 @@ public class SearchService {
                     resultSet.tags.add(w);
                 }
 
+                StringBuilder sb1 = new StringBuilder();
+                sb1.append(LocateExclude(code, Exclusions));
+                sb1.append(" ");
+                sb1.append(LocateExtra(code, Includes, " Includes: "));
+                sb1.append(LocateExtra(code, InclusionTerm, " Includes term(s) of "));
+                sb1.append(LocateExtra(code, CodeFirst, " First code "));
+                sb1.append(LocateExtra(code, CodeAlso, " Also, code "));
+                sb1.append(LocateExtra(code, UseAdditionalCode, " Additionally  "));
+                String desc2 = sb1.toString();
+
+
                 if (seventh != null && code.length() > 3)
                 {
                     // Makes shorter codes to comply with full 7-place. If sub-code is
@@ -172,13 +174,8 @@ public class SearchService {
                         }
                         cv.icd10Code = code2 + subCode;
                         resultSet.subCodes.add(subCode);
-                        cv.desc = desc + ", " + seventh.get(subCode);
-                        if (included.equals("") == false) {
-                            cv.desc += ". Includes: " + included;
-                        }
-                        if (extraPhrases.length() > 0) {
-                            cv.desc += " " + extraPhrases.toString();
-                        }
+                        cv.desc = desc + ", " + seventh.get(subCode) +
+                                ". " + desc2;
                         cv.url = googleUrl;
                         codeValueList.add(cv);
                     }
@@ -186,14 +183,7 @@ public class SearchService {
                 else {
                     CodeValue cv = new CodeValue();
                     cv.icd10Code = code;
-                    cv.desc = desc;
-                    cv.url = googleUrl;
-                    if (included.equals("") == false) {
-                        cv.desc += ". Includes: " + included;
-                    }
-                    if (extraPhrases.length() > 0) {
-                        cv.desc += ". " + extraPhrases.toString();
-                    }
+                    cv.desc = desc + ". " + desc2;
                     codeValueList.add(cv);
                 }
             }
@@ -206,6 +196,11 @@ public class SearchService {
         return resultSet;
     }
 
+    /**
+     * Loads the 7th Charcter Rules to be used for lookups.
+     * @return
+     * @throws Exception
+     */
     public Map<String, Map<String, String>> Load7CharRules() throws Exception {
 
         Map<String, Map<String, String>> sevenCharRuleSet = new HashMap<>();
@@ -252,56 +247,256 @@ public class SearchService {
         return sevenCharRuleSet;
     }
 
-    public Exclusion FindExludes(Node codeNode, String code) throws Exception {
-        Exclusion exc = null;
-
-        if (Exclusions.containsKey(code))
-        {
-            Logger.debug("Already have " + code);
-            return Exclusions.get(code);
-        }
-
-        Node current = codeNode.getParentNode();
+    public String LocateExtra(String code, Map<String, String> map, String label) {
+        String key = "";
         int codeLen = code.length();
-
         for(int c = codeLen; c >= 3; c--) {
             if (c == 4) continue;
             String currentCode = code.substring(0,c);
-            Logger.debug("code lookup " + currentCode );
+            if (map.containsKey(currentCode)) {
+                String note = map.get(currentCode);
+                if (note == null) continue;
+                return label + " " + note + ". ";
+            }
+        }
+        return "";
+    }
 
-            NodeList nodes = current.getChildNodes();
+    public String LocateExclude(String code, Map<String, Exclusion> map) {
 
-            String excludes1 = "";
-            String excludes2 = "";
+        int codeLen = code.length();
+        for(int c = codeLen; c >= 3; c--) {
+            if (c == 4) continue;
+            String currentCode = code.substring(0,c);
+            if (map.containsKey(currentCode))
+            {
+                StringBuilder sb = new StringBuilder();
+                Exclusion e = map.get(currentCode);
 
-            for(int n = 0; n < nodes.getLength(); n++) {
-                Node m = nodes.item(n);
-                String s = m.getNodeName();
-                if (s.equals("excludes1")) {
-                    String notes = m.getTextContent();
-                    excludes1 = notes;
+                if (e == null) continue;
+
+                if (e.excludes1 != null)
+                {
+                    sb.append("Excludes ");
+                    sb.append(e.excludes1);
                 }
-                else if (s.equals("excludes2")) {
-                    String notes = m.getTextContent();
-                    excludes2 = notes;
+
+                if (e.excludes2 != null)
+                {
+                    if (sb.length() != 0) sb.append(". ");
+                    sb.append("Consider ");
+                    sb.append(e.excludes2);
                 }
-            }
 
-            exc = null;
+                sb.append(". ");
 
-            if (!excludes1.equals("") || !excludes2.equals("")) {
-                exc = new Exclusion();
-                exc.excludes1 = excludes1;
-                exc.excludes2 = excludes2;
-                Exclusions.put(currentCode, exc);
-                return exc;
+                return sb.toString();
             }
-            else {
-                Exclusions.put(currentCode, null);
+        }
+        return "";
+    }
+
+    /**
+     * Builds the extra data maps like Excludes, Includes, CodeFirst and CodeTogether items
+     * in the tree.
+     * @param codeNode
+     * @param code
+     * @return
+     * @throws Exception
+     */
+    public void BuildExtrasMap(Node codeNode, String code) throws Exception {
+
+        if (Exclusions.containsKey(code) == false) {
+            Exclusion exc = null;
+            Node current = codeNode.getParentNode();
+            int codeLen = code.length();
+
+            for(int c = codeLen; c >= 3; c--) {
+                if (c == 4) continue;
+                String currentCode = code.substring(0,c);
+                Logger.debug("code lookup " + currentCode );
+
+                NodeList nodes = current.getChildNodes();
+
+                String excludes1 = null;
+                String excludes2 = null;
+
+                for(int n = 0; n < nodes.getLength(); n++) {
+                    Node m = nodes.item(n);
+                    String s = m.getNodeName();
+                    if (s.equals("excludes1")) {
+                        String notes = m.getTextContent();
+                        excludes1 = notes;
+                    }
+                    else if (s.equals("excludes2")) {
+                        String notes = m.getTextContent();
+                        excludes2 = notes;
+                    }
+                }
+
+                exc = null;
+
+                if (excludes1 != null || excludes2 != null) {
+                    exc = new Exclusion();
+                    exc.excludes1 = excludes1;
+                    exc.excludes2 = excludes2;
+                    Exclusions.put(currentCode, exc);
+                    break;
+                }
+                else {
+                    Exclusions.put(currentCode, null);
+                }
+                current = current.getParentNode();
             }
-            current = current.getParentNode();
         }
 
-        return null;
+        if (Includes.containsKey(code) == false) {
+
+            Node current = codeNode.getParentNode();
+            int codeLen = code.length();
+
+            for(int c = codeLen; c >= 3; c--) {
+                if (c == 4) continue;
+                String currentCode = code.substring(0,c);
+                NodeList nodes = current.getChildNodes();
+                String notes = "";
+
+                for(int n = 0; n < nodes.getLength(); n++) {
+                    Node m = nodes.item(n);
+                    String s = m.getNodeName();
+                    if (s.equals("includes")) {
+                        notes = m.getTextContent();
+                    }
+                }
+
+                if (notes.equals("") == false) {
+                    Includes.put(currentCode, notes);
+                    break;
+                }
+                else {
+                    Includes.put(currentCode, null);
+                }
+                current = current.getParentNode();
+            }
+        }
+
+        if (CodeFirst.containsKey(code) == false) {
+
+            Node current = codeNode.getParentNode();
+            int codeLen = code.length();
+
+            for(int c = codeLen; c >= 3; c--) {
+                if (c == 4) continue;
+                String currentCode = code.substring(0,c);
+                NodeList nodes = current.getChildNodes();
+                String notes = "";
+
+                for(int n = 0; n < nodes.getLength(); n++) {
+                    Node m = nodes.item(n);
+                    String s = m.getNodeName();
+                    if (s.equals("codeFirst")) {
+                        notes = m.getTextContent();
+                    }
+                }
+
+                if (notes.equals("") == false) {
+                    CodeFirst.put(currentCode, notes);
+                    break;
+                }
+                else {
+                    CodeFirst.put(currentCode, null);
+                }
+                current = current.getParentNode();
+            }
+        }
+
+        if (UseAdditionalCode.containsKey(code) == false) {
+
+            Node current = codeNode.getParentNode();
+            int codeLen = code.length();
+
+            for(int c = codeLen; c >= 3; c--) {
+                if (c == 4) continue;
+                String currentCode = code.substring(0,c);
+                NodeList nodes = current.getChildNodes();
+                String notes = "";
+
+                for(int n = 0; n < nodes.getLength(); n++) {
+                    Node m = nodes.item(n);
+                    String s = m.getNodeName();
+                    if (s.equals("useAdditionalCode")) {
+                        notes = m.getTextContent();
+                    }
+                }
+
+                if (notes.equals("") == false) {
+                    UseAdditionalCode.put(currentCode, notes);
+                    break;
+                }
+                else {
+                    UseAdditionalCode.put(currentCode, null);
+                }
+                current = current.getParentNode();
+            }
+        }
+
+        if (CodeAlso.containsKey(code) == false) {
+            Node current = codeNode.getParentNode();
+            int codeLen = code.length();
+
+            for(int c = codeLen; c >= 3; c--) {
+                if (c == 4) continue;
+                String currentCode = code.substring(0,c);
+                NodeList nodes = current.getChildNodes();
+                String notes = "";
+
+                for(int n = 0; n < nodes.getLength(); n++) {
+                    Node m = nodes.item(n);
+                    String s = m.getNodeName();
+                    if (s.equals("codeAlso")) {
+                        notes = m.getTextContent();
+                    }
+                }
+
+                if (notes.equals("") == false) {
+                    CodeAlso.put(currentCode, notes);
+                    break;
+                }
+                else {
+                    CodeAlso.put(currentCode, null);
+                }
+                current = current.getParentNode();
+            }
+        }
+
+        if (InclusionTerm.containsKey(code) == false) {
+            Node current = codeNode.getParentNode();
+            int codeLen = code.length();
+
+            for(int c = codeLen; c >= 3; c--) {
+                if (c == 4) continue;
+                String currentCode = code.substring(0,c);
+                NodeList nodes = current.getChildNodes();
+                String notes = "";
+
+                for(int n = 0; n < nodes.getLength(); n++) {
+                    Node m = nodes.item(n);
+                    String s = m.getNodeName();
+                    if (s.equals("inclusionTerm")) {
+                        notes = m.getTextContent();
+                    }
+                }
+
+                if (notes.equals("") == false) {
+                    InclusionTerm.put(currentCode, notes);
+                    break;
+                }
+                else {
+                    InclusionTerm.put(currentCode, null);
+                }
+                current = current.getParentNode();
+            }
+        }
+        return;
     }
 }
