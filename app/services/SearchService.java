@@ -248,18 +248,20 @@ public class SearchService {
     }
 
     public String LocateExtra(String code, Map<String, String> map, String label) {
-        String key = "";
         int codeLen = code.length();
+        String bigNote = "";
         for(int c = codeLen; c >= 3; c--) {
             if (c == 4) continue;
             String currentCode = code.substring(0,c);
             if (map.containsKey(currentCode)) {
                 String note = map.get(currentCode);
                 if (note == null) continue;
-                return label + " " + note + ". ";
+                bigNote = note + " " + bigNote;
             }
         }
-        return "";
+
+        if (bigNote.equals("")) return "";
+        return label + " " + bigNote;
     }
 
     public String LocateExclude(String code, Map<String, Exclusion> map) {
@@ -275,13 +277,13 @@ public class SearchService {
 
                 if (e == null) continue;
 
-                if (e.excludes1 != null)
+                if (e.excludes1 != null && e.excludes1.equals("") == false)
                 {
                     sb.append("Excludes ");
                     sb.append(e.excludes1);
                 }
 
-                if (e.excludes2 != null)
+                if (e.excludes2 != null && e.excludes2.equals("") == false)
                 {
                     if (sb.length() != 0) sb.append(". ");
                     sb.append("Consider ");
@@ -307,6 +309,7 @@ public class SearchService {
     public void BuildExtrasMap(Node codeNode, String code) throws Exception {
 
         if (Exclusions.containsKey(code) == false) {
+
             Exclusion exc = null;
             Node current = codeNode.getParentNode();
             int codeLen = code.length();
@@ -334,14 +337,16 @@ public class SearchService {
                     }
                 }
 
-                exc = null;
-
                 if (excludes1 != null || excludes2 != null) {
-                    exc = new Exclusion();
-                    exc.excludes1 = excludes1;
-                    exc.excludes2 = excludes2;
+                    if (exc == null) exc = new Exclusion();
+                    if (excludes1 != null)
+                        exc.excludes1 = exc.excludes1 == null?
+                            excludes1 : exc.excludes1 + " " + excludes1;
+                    if (excludes2 != null)
+                        exc.excludes2 = exc.excludes2 == null?
+                            excludes2 : exc.excludes2 + " " + excludes2;
                     Exclusions.put(currentCode, exc);
-                    break;
+
                 }
                 else {
                     Exclusions.put(currentCode, null);
@@ -371,7 +376,6 @@ public class SearchService {
 
                 if (notes.equals("") == false) {
                     Includes.put(currentCode, notes);
-                    break;
                 }
                 else {
                     Includes.put(currentCode, null);
@@ -401,7 +405,6 @@ public class SearchService {
 
                 if (notes.equals("") == false) {
                     CodeFirst.put(currentCode, notes);
-                    break;
                 }
                 else {
                     CodeFirst.put(currentCode, null);
@@ -431,7 +434,6 @@ public class SearchService {
 
                 if (notes.equals("") == false) {
                     UseAdditionalCode.put(currentCode, notes);
-                    break;
                 }
                 else {
                     UseAdditionalCode.put(currentCode, null);
@@ -460,7 +462,6 @@ public class SearchService {
 
                 if (notes.equals("") == false) {
                     CodeAlso.put(currentCode, notes);
-                    break;
                 }
                 else {
                     CodeAlso.put(currentCode, null);
@@ -489,7 +490,6 @@ public class SearchService {
 
                 if (notes.equals("") == false) {
                     InclusionTerm.put(currentCode, notes);
-                    break;
                 }
                 else {
                     InclusionTerm.put(currentCode, null);
