@@ -3,7 +3,8 @@ package models;
 import java.util.*;
 
 /**
- * Created by manabutokunaga on 10/2/15.
+ * The full set of search results to be presented to the client
+ * Created by manabu@wingumd.com on 10/2/15.
  */
 public class IcdResultSet {
 
@@ -12,9 +13,7 @@ public class IcdResultSet {
         tags = new TreeSet<>();
         codeValues = new ArrayList<>();
         String base = "";
-        for(String t: base.split(" ")) {
-            this.tags.add(t);
-        }
+        Collections.addAll(this.tags, base.split(" "));
 
         subCodes = new TreeSet<>();
     }

@@ -16,10 +16,7 @@ import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -195,24 +192,19 @@ public class SearchService {
         return resultSet;
     }
 
-    private void codeDiscovery(CodeValue cv)
-    {
+    private void codeDiscovery(CodeValue cv) {
         Pattern pattern = Pattern.compile("\\([A-Z]\\d\\d.*\\)");
         Matcher match = pattern.matcher(cv.desc);
 
-        while(match.find()) {
+        while (match.find()) {
             String code = match.group();
-            code = code.replace("(","")
-                    .replace(")","");
+            code = code.replace("(", "")
+                    .replace(")", "");
             if (code.contains("-")) continue;
-            if (code.contains(","))
-            {
+            if (code.contains(",")) {
                 String[] split = code.split(",");
-                for(String s: split) {
-                    cv.foundCodes.add(s);
-                }
-            }
-            else {
+                Collections.addAll(cv.foundCodes, split);
+            } else {
                 cv.foundCodes.add(code);
             }
         }
@@ -304,7 +296,7 @@ public class SearchService {
 
     private void builExtraMap(Map<String, String> map, Node codeNode, String code, String noteNodeName) {
 
-        if (! map.containsKey(code)) {
+        if (!map.containsKey(code)) {
             Node current = codeNode.getParentNode();
             int codeLen = code.length();
 
