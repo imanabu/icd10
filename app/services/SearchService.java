@@ -52,7 +52,7 @@ public class SearchService {
         SeventhCharRules = load7thCharRules();
     }
 
-    public IcdResultSet findDescription(String query) throws Exception {
+    public IcdResultSet findDescription(String query, int detailThreshold) throws Exception {
 
         Excludes1 = new HashMap<>();
         Excludes2 = new HashMap<>();
@@ -105,9 +105,11 @@ public class SearchService {
         for (int j = 0; j < nodeCount; j++) {
             Node node = nodeList.item(j).getParentNode();
             NodeList c = node.getChildNodes();
+            List<String> bc = null;
 
             String code = "";
             String desc = "";
+            int billability = 0;
 
             for (int i = 0; i < c.getLength(); i++) {
                 Node m = c.item(i);
@@ -117,6 +119,11 @@ public class SearchService {
                     case "name":
                         code = m.getFirstChild().getNodeValue();
                         buildAllExtraMaps(m, code);
+                        if (nodeCount < detailThreshold) {
+                            bc = billableCodes(m);
+                            if (bc.size() == 0) billability = 1;
+                            if (bc.size() > 0) billability = 2;
+                        }
                         break;
                     case "desc":
                         desc = m.getFirstChild().getNodeValue();
@@ -158,7 +165,9 @@ public class SearchService {
                                 locateExtra(code, InclusionTerm, " <strong>Includes term(s) of </strong>") +
                                 locateExtra(code, UseAdditionalCode, " <strong>Additionally  </strong>");
 
-                if (seventh != null && code.length() > 3) {
+
+
+                if (seventh != null && code.length() > 3 && billability == 1) {
                     // Makes shorter codes to comply with full 7-place. If sub-code is
                     // not known, an X will be placed on lower digits.
                     for (String subCode : seventh.keySet()) {
@@ -172,6 +181,9 @@ public class SearchService {
                         cv.desc = boldKeywords(desc + ", " + seventh.get(subCode) +
                                 ". " + desc2, query);
                         cv.url = googleUrl;
+                        cv.billability = billability;
+                        cv.billableCodes = bc;
+
                         codeDiscovery(cv);
                         codeValueList.add(cv);
                     }
@@ -181,6 +193,8 @@ public class SearchService {
                     cv.desc = boldKeywords(desc + ". " + desc2, query);
                     cv.url = googleUrl;
                     codeDiscovery(cv);
+                    cv.billability = billability;
+                    cv.billableCodes = bc;
                     codeValueList.add(cv);
                 }
             }
@@ -197,7 +211,7 @@ public class SearchService {
 
         String res = desc;
 
-        for(String kw: keyword.split(" ")) {
+        for(String kw: keyword.trim().split(" ")) {
 
             String ckw = kw.substring(0,1).toUpperCase() + kw.substring(1);
             res = res.replace(kw, "<b><i>"+ kw + "</i></b>");
@@ -338,5 +352,24 @@ public class SearchService {
                 current = current.getParentNode();
             }
         }
+    }
+
+    public List<String> billableCodes(Node codeNode) throws Exception
+    {
+        List<String> b = new ArrayList<String>();
+
+        XPath xpath = XPathFactory.newInstance().newXPath();
+        String expression = "descendant::diag/name";
+
+        NodeList nodeList = (NodeList) xpath.evaluate(expression, codeNode.getParentNode(), XPathConstants.NODESET);
+
+        Logger.debug("nodes found {}", nodeList.getLength());
+        int nodeCount = nodeList.getLength();
+
+        for(int i = 0; i < nodeCount; i++) {
+            b.add(nodeList.item(i).getFirstChild().getNodeValue());
+        }
+
+        return b;
     }
 }

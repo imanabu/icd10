@@ -66,7 +66,9 @@ public class Application extends Controller {
                 }
             }
 
-            IcdResultSet codes = searchService.findDescription(c.filter);
+            int detailThreshold = 75;
+
+            IcdResultSet codes = searchService.findDescription(c.filter, detailThreshold);
 
             String s = "";
             int count = codes.codeValues.size();
@@ -77,7 +79,7 @@ public class Application extends Controller {
             List<String> addTerms2 = addTerms;
 
             if (count > 20) {
-                codes.clearCodesIfTooMany(250);
+                codes.clearCodesIfTooMany(detailThreshold);
                 msg.append(String.format("Wow! %d code%s for %s. Tap a button below to quickly narrow your search. ", count, s, c.filter));
             }
             else if (count == 0)
