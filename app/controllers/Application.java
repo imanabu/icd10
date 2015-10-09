@@ -11,6 +11,7 @@ import views.html.index;
 import views.html.lic;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,9 +27,8 @@ public class Application extends Controller {
             addTerms = new ArrayList<>();
             String list = "right left proximal medial distal peripheral exterm* upper lower lateral anterior posterior frontal " +
                     "extra inner outer head ear eye nose mouth neck chest back arm buttock thigh leg foot";
-            for(String t: list.split(" ")) {
-                addTerms.add(t);
-            }
+            String[] split = list.split(" ");
+            Collections.addAll(addTerms, split);
         } catch (Exception ex) {
             Logger.error("Construction failed due to " + ex.toString());
         }

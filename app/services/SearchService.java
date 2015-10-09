@@ -28,7 +28,8 @@ public class SearchService {
 
     private static Document Icd10Doc = null;
     private static Map<String, Map<String, String>> SeventhCharRules;
-
+    private static Pattern icd10QueryPattern = Pattern.compile("[A-Za-z]\\d\\d\\..*");
+    private static Pattern icdCodePattern = Pattern.compile("\\([A-Z]\\d\\d.*\\)");
     private Map<String, String> Excludes1;
     private Map<String, String> Excludes2;
     private Map<String, String> Includes;
@@ -48,10 +49,10 @@ public class SearchService {
         String path = icd10Uri.toString().replace("file:", "");
         Logger.debug(path);
         Icd10Doc = builder.parse(new File(path));
-        SeventhCharRules = Load7CharRules();
+        SeventhCharRules = load7thCharRules();
     }
 
-    public IcdResultSet findDescription(String description) throws Exception {
+    public IcdResultSet findDescription(String query) throws Exception {
 
         Excludes1 = new HashMap<>();
         Excludes2 = new HashMap<>();
@@ -64,12 +65,12 @@ public class SearchService {
         IcdResultSet resultSet = new IcdResultSet();
         List<CodeValue> codeValueList = new ArrayList<>();
 
-        if (description == null || description.equals("")) {
+        if (query == null || query.equals("")) {
             return resultSet; // empty list
         }
 
         resultSet.tags.clear();
-        String[] keywords = description.trim().toLowerCase()
+        String[] keywords = query.trim().toLowerCase()
                 .replace("*", "")
                 .split(" ");
 
@@ -88,8 +89,8 @@ public class SearchService {
 
         XPath xpath = XPathFactory.newInstance().newXPath();
         String expression;
-        Pattern pattern = Pattern.compile("[A-Za-z]\\d\\d\\..*");
-        Matcher matcher = pattern.matcher(sb.toString());
+
+        Matcher matcher = icd10QueryPattern.matcher(sb.toString());
         expression = String.format("//desc[%s]", sb.toString());
         if (matcher.find()) {
             expression = String.format("//name[text()='%s']", keywords[0].toUpperCase());
@@ -115,7 +116,7 @@ public class SearchService {
                 switch (name) {
                     case "name":
                         code = m.getFirstChild().getNodeValue();
-                        BuildExtrasMap(m, code);
+                        buildAllExtraMaps(m, code);
                         break;
                     case "desc":
                         desc = m.getFirstChild().getNodeValue();
@@ -123,7 +124,7 @@ public class SearchService {
                 }
             }
 
-            String exclude = "of in at other is are and or to from not on by" + description.toLowerCase();
+            String exclude = "of in at other is are and or to from not on by" + query.toLowerCase();
 
             if (!code.equals("")) {
                 seventh = null;
@@ -149,13 +150,13 @@ public class SearchService {
                 }
 
                 String desc2 =
-                        LocateExtra(code, CodeFirst, " <strong>First code</strong> ") +
-                                LocateExtra(code, CodeAlso, " <strong>Also, code</strong> ") +
-                                LocateExtra(code, Excludes1, " <strong>Excluding </strong>") +
-                                LocateExtra(code, Excludes2, " <strong>Consider instead </strong>") +
-                                LocateExtra(code, Includes, " <strong>Includes: </strong>") +
-                                LocateExtra(code, InclusionTerm, " <strong>Includes term(s) of </strong>") +
-                                LocateExtra(code, UseAdditionalCode, " <strong>Additionally  </strong>");
+                        locateExtra(code, CodeFirst, " <strong>First code</strong> ") +
+                                locateExtra(code, CodeAlso, " <strong>Also, code</strong> ") +
+                                locateExtra(code, Excludes1, " <strong>Excluding </strong>") +
+                                locateExtra(code, Excludes2, " <strong>Consider instead </strong>") +
+                                locateExtra(code, Includes, " <strong>Includes: </strong>") +
+                                locateExtra(code, InclusionTerm, " <strong>Includes term(s) of </strong>") +
+                                locateExtra(code, UseAdditionalCode, " <strong>Additionally  </strong>");
 
                 if (seventh != null && code.length() > 3) {
                     // Makes shorter codes to comply with full 7-place. If sub-code is
@@ -168,8 +169,8 @@ public class SearchService {
                         }
                         cv.icd10Code = code2 + subCode;
                         resultSet.subCodes.add(subCode);
-                        cv.desc = desc + ", " + seventh.get(subCode) +
-                                ". " + desc2;
+                        cv.desc = boldKeywords(desc + ", " + seventh.get(subCode) +
+                                ". " + desc2, query);
                         cv.url = googleUrl;
                         codeDiscovery(cv);
                         codeValueList.add(cv);
@@ -177,7 +178,7 @@ public class SearchService {
                 } else {
                     CodeValue cv = new CodeValue();
                     cv.icd10Code = code;
-                    cv.desc = desc + ". " + desc2;
+                    cv.desc = boldKeywords(desc + ". " + desc2, query);
                     cv.url = googleUrl;
                     codeDiscovery(cv);
                     codeValueList.add(cv);
@@ -192,9 +193,24 @@ public class SearchService {
         return resultSet;
     }
 
+    public String boldKeywords(String desc, String keyword) {
+
+        String res = desc;
+
+        for(String kw: keyword.split(" ")) {
+
+            String ckw = kw.substring(0,1).toUpperCase() + kw.substring(1);
+            res = res.replace(kw, "<b><i>"+ kw + "</i></b>");
+            res = res.replace(ckw, "<b><i>"+ ckw + "</i></b>");
+        }
+
+        return res;
+
+    }
+
     private void codeDiscovery(CodeValue cv) {
-        Pattern pattern = Pattern.compile("\\([A-Z]\\d\\d.*\\)");
-        Matcher match = pattern.matcher(cv.desc);
+
+        Matcher match = icdCodePattern.matcher(cv.desc);
 
         while (match.find()) {
             String code = match.group();
@@ -216,7 +232,7 @@ public class SearchService {
      * @return The map of 7th rules per each code level
      * @throws Exception
      */
-    public Map<String, Map<String, String>> Load7CharRules() throws Exception {
+    private Map<String, Map<String, String>> load7thCharRules() throws Exception {
 
         Map<String, Map<String, String>> sevenCharRuleSet = new HashMap<>();
         XPath xpath = XPathFactory.newInstance().newXPath();
@@ -258,7 +274,7 @@ public class SearchService {
         return sevenCharRuleSet;
     }
 
-    public String LocateExtra(String code, Map<String, String> map, String label) {
+    private String locateExtra(String code, Map<String, String> map, String label) {
         int codeLen = code.length();
         String bigNote = "";
         for (int c = codeLen; c >= 3; c--) {
@@ -283,18 +299,18 @@ public class SearchService {
      * @param code     ICD-10 code for the note
      * @throws Exception
      */
-    public void BuildExtrasMap(Node codeNode, String code) throws Exception {
+    public void buildAllExtraMaps(Node codeNode, String code) throws Exception {
 
-        builExtraMap(Excludes1, codeNode, code, "excludes1");
-        builExtraMap(Excludes2, codeNode, code, "excludes2");
-        builExtraMap(Includes, codeNode, code, "includes");
-        builExtraMap(CodeFirst, codeNode, code, "codeFirst");
-        builExtraMap(UseAdditionalCode, codeNode, code, "useAdditionalCode");
-        builExtraMap(CodeAlso, codeNode, code, "codeAlso");
-        builExtraMap(InclusionTerm, codeNode, code, "inclusionTerm");
+        buildExtraMap(Excludes1, codeNode, code, "excludes1");
+        buildExtraMap(Excludes2, codeNode, code, "excludes2");
+        buildExtraMap(Includes, codeNode, code, "includes");
+        buildExtraMap(CodeFirst, codeNode, code, "codeFirst");
+        buildExtraMap(UseAdditionalCode, codeNode, code, "useAdditionalCode");
+        buildExtraMap(CodeAlso, codeNode, code, "codeAlso");
+        buildExtraMap(InclusionTerm, codeNode, code, "inclusionTerm");
     }
 
-    private void builExtraMap(Map<String, String> map, Node codeNode, String code, String noteNodeName) {
+    private void buildExtraMap(Map<String, String> map, Node codeNode, String code, String noteNodeName) {
 
         if (!map.containsKey(code)) {
             Node current = codeNode.getParentNode();

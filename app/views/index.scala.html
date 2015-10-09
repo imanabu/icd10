@@ -38,8 +38,6 @@
 
     <div class="container-fluid" style="cursor:pointer;">
         <P>&nbsp;</P>
-        <span style="color:gray;">Tap the ICD-10 code button to explore more on the web.</span>
-        <br/>
         Share this result! &nbsp;
         <a href="https://twitter.com/share" class="twitter-share-button" data-text="Found my #ICD-10 Code in a few screen taps." data-via="bodymapsnap">Tweet</a>
         <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
@@ -54,10 +52,13 @@
             <tbody>
             @myCodes.codeValues.map { oneCodeValue =>
                 <tr>
-                    <td><a type="button" class="btn btn-success" href="@oneCodeValue.url" target="_blank">@oneCodeValue.icd10Code</a></td>
+                    <td><a type="button" class="btn btn-success" href="/searcg?filter=@oneCodeValue.icd10Code" target="_blank">@oneCodeValue.icd10Code</a></td>
                     <td>@Html(oneCodeValue.desc)
+                        &nbsp;
+                        <a type="button" class="btn btn-danger btn-xs" href="@oneCodeValue.url" target="_blank">G</a>
                         @if(oneCodeValue.foundCodes.size() > 0) {
-                        <br/>Quick Link:
+                        &nbsp;Code Ref:
+
                         @oneCodeValue.foundCodes.map { foundCode =>
                             <a type="button" class="btn btn-info btn-xs" href="/search?filter=@foundCode">@foundCode</a>
                          }
