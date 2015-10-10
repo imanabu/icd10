@@ -377,7 +377,6 @@ public class SearchService {
 
         NodeList nodeList = (NodeList) xpath.evaluate(expression, codeNode.getParentNode(), XPathConstants.NODESET);
 
-        Logger.debug("nodes found {}", nodeList.getLength());
         int nodeCount = nodeList.getLength();
 
         for(int i = 0; i < nodeCount; i++) {

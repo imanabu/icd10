@@ -38,6 +38,7 @@
 
     <div class="container-fluid" style="cursor:pointer;">
         <P>&nbsp;</P>
+        Legends: <button type="button" class="btn btn-success btn-xs disabled">$</button> Billable Code <button type="button" class="btn btn-info btn-xs disabled">$-&gt;</button> Drill down for Billable Codes &nbsp; &nbsp;
         Share this result! &nbsp;
         <a href="https://twitter.com/share" class="twitter-share-button" data-text="Found my #ICD-10 Code in a few screen taps." data-via="bodymapsnap">Tweet</a>
         <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
@@ -54,14 +55,14 @@
                 <tr>
                     <td><a type="button" class="btn btn-success" href="/search?filter=@oneCodeValue.icd10Code" target="_blank">@oneCodeValue.icd10Code</a>
                         @if(oneCodeValue.billability == 1) {
-                            <button type="button" class="btn btn-success btn-xs">$</button>
+                            <button type="button" class="btn btn-success btn-xs disabled">$</button>
                         }
                     </td>
                     <td>@Html(oneCodeValue.desc)
                         &nbsp;
                         <a type="button" class="btn btn-danger btn-xs" href="@oneCodeValue.url" target="_blank">G</a>
                         @if(oneCodeValue.billability > 0 && oneCodeValue.billableCodes.size() > 0) {
-                            <button type="button" class="btn btn-info btn-xs">$-&gt;</button>
+                            <button type="button" class="btn btn-info btn-xs disabled">$-&gt;</button>
                             @oneCodeValue.billableCodes.map { billableCode =>
                                 <a type="button" class="btn btn-warning btn-xs" href="/search?filter=@billableCode">@billableCode</a>
                             }
