@@ -2,6 +2,7 @@ package controllers;
 
 
 import models.IcdResultSet;
+import org.joda.time.DateTime;
 import play.Logger;
 import play.data.Form;
 import play.mvc.Controller;
@@ -68,6 +69,7 @@ public class Application extends Controller {
 
             int detailThreshold = 75;
 
+            Logger.debug("Query: " + DateTime.now().toString() + " " + c.filter);
             IcdResultSet codes = searchService.findDescription(c.filter, detailThreshold);
 
             String s = "";

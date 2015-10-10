@@ -70,12 +70,10 @@
                         @if(oneCodeValue.foundCodes.size() > 0) {
                         &nbsp;Code Ref:
 
-                        @oneCodeValue.foundCodes.map { foundCode =>
+                        @for(foundCode <- oneCodeValue.foundCodes.toSeq) {
                             <a type="button" class="btn btn-info btn-xs" href="/search?filter=@foundCode">@foundCode</a>
                             }
                         }
-
-
 
                     </td>
                 </tr>

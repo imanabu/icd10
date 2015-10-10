@@ -28,7 +28,7 @@ public class SearchService {
 
     private static Document Icd10Doc = null;
     private static Map<String, Map<String, String>> SeventhCharRules;
-    private static Pattern icd10QueryPattern = Pattern.compile("[A-Za-z]\\d\\d\\..*");
+    private static Pattern icd10QueryPattern = Pattern.compile("[A-Za-z]\\d\\d\\.*");
     private static Pattern icdCodePattern = Pattern.compile("\\([A-Z]\\d\\d.*\\)");
     private Map<String, String> Excludes1;
     private Map<String, String> Excludes2;
@@ -52,6 +52,13 @@ public class SearchService {
         SeventhCharRules = load7thCharRules();
     }
 
+    /**
+     * find ICD-10 by description or a single code
+     * @param query
+     * @param detailThreshold - Optimization. Not to execute deeper query until the total nodes is less than this number.
+     * @return The result set
+     * @throws Exception
+     */
     public IcdResultSet findDescription(String query, int detailThreshold) throws Exception {
 
         Excludes1 = new HashMap<>();
@@ -64,6 +71,8 @@ public class SearchService {
 
         IcdResultSet resultSet = new IcdResultSet();
         List<CodeValue> codeValueList = new ArrayList<>();
+
+        query = query == null ? null : query.trim();
 
         if (query == null || query.equals("")) {
             return resultSet; // empty list
@@ -91,9 +100,12 @@ public class SearchService {
         String expression;
 
         Matcher matcher = icd10QueryPattern.matcher(sb.toString());
-        expression = String.format("//desc[%s]", sb.toString());
+
         if (matcher.find()) {
             expression = String.format("//name[text()='%s']", keywords[0].toUpperCase());
+        }
+        else {
+            expression = String.format("//desc[%s]", sb.toString());
         }
         NodeList nodeList = (NodeList) xpath.evaluate(expression, Icd10Doc, XPathConstants.NODESET);
 
@@ -229,8 +241,10 @@ public class SearchService {
         while (match.find()) {
             String code = match.group();
             code = code.replace("(", "")
+                    .replace(".-", "")
+                    .replace(".- ", "")
+                    .replace("-)","")
                     .replace(")", "");
-            if (code.contains("-")) continue;
             if (code.contains(",")) {
                 String[] split = code.split(",");
                 Collections.addAll(cv.foundCodes, split);
