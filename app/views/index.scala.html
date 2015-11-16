@@ -15,7 +15,7 @@
             <H4>@message</H4>
         </div>
         <div id="btn-add-terms">
-            <a class="btn btn-warning" type="button" href="/">Start Over</a>
+            <a class="btn btn-warning" type="button" href="@routes.Application.index()">Start Over</a>
             @for(term <- addTerms) {
                 <button type="button" class="btn btn-default addon" data-addon="@term">@term</button>
             }
@@ -53,7 +53,7 @@
             <tbody>
             @myCodes.codeValues.map { oneCodeValue =>
                 <tr>
-                    <td><a type="button" class="btn btn-success" href="/search?filter=@oneCodeValue.icd10Code" target="_blank">@oneCodeValue.icd10Code</a>
+                    <td><a type="button" class="btn btn-success" href="@routes.Application.search()?filter=@oneCodeValue.icd10Code" target="_blank">@oneCodeValue.icd10Code</a>
                         @if(oneCodeValue.billability == 1) {
                             <button type="button" class="btn btn-success btn-xs disabled">$</button>
                         }
@@ -64,7 +64,7 @@
                         @if(oneCodeValue.billability > 0 && oneCodeValue.billableCodes.size() > 0) {
                             <button type="button" class="btn btn-info btn-xs disabled">$-&gt;</button>
                             @oneCodeValue.billableCodes.map { billableCode =>
-                                <a type="button" class="btn btn-warning btn-xs" href="/search?filter=@billableCode">@billableCode</a>
+                                <a type="button" class="btn btn-warning btn-xs" href="@routes.Application.search()?filter=@billableCode">@billableCode</a>
                             }
                         }
 
@@ -72,7 +72,7 @@
                         &nbsp;Code Ref:
 
                         @for(foundCode <- oneCodeValue.foundCodes.toSeq) {
-                            <a type="button" class="btn btn-info btn-xs" href="/search?filter=@foundCode">@foundCode</a>
+                            <a type="button" class="btn btn-info btn-xs" href="@routes.Application.search()?filter=@foundCode">@foundCode</a>
                             }
                         }
 
